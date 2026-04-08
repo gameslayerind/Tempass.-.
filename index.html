@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>This or That</title>
+<meta property="og:title" content="EpicEnchanter">
+<meta property="og:description" content="Tap to visit">
+<meta property="og:image" content="https://gameslayerind.github.io/PortfolioByEE/preview.png">
+<meta property="og:url" content="https://gameslayerind.github.io/PortfolioByEE/">
+<meta property="og:type" content="website">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #16161f;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --accent-a: #7c6aff;
+    --accent-b: #ff6a9a;
+    --glow-a: rgba(124, 106, 255, 0.25);
+    --glow-b: rgba(255, 106, 154, 0.25);
+    --radius: 18px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(124,106,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 80% 80%, rgba(255,106,154,0.07) 0%, transparent 70%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes bgPulse {
+    0%   { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-20px); }
+  }
+
+  .screen.exiting { animation: fadeOut 0.25s ease forwards; }
+
+  /* ── START SCREEN ── */
+  .start-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 48px;
+  }
+
+  .start-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(38px, 10vw, 54px);
+    font-weight: 800;
+    line-height: 1.05;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #fff 30%, #b0a8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .start-or {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(38px, 10vw, 54px);
+    font-weight: 800;
+    line-height: 1.05;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #ff6a9a, #ffb86a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .start-subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    text-align: center;
+    margin: 24px 0 48px;
+    line-height: 1.5;
+  }
+
+  /* ── QUIZ SCREEN ── */
+  .progress-wrap {
+    width: 100%;
+    margin-bottom: 36px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 10px var(--glow-a);
+  }
+
+  .question-text {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(20px, 6vw, 26px);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.3;
+    min-height: 72px;
+  }
+
+  .choices {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100%;
+    padding: 22px 24px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(17px, 5vw, 20px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    text-align: center;
+    line-height: 1.2;
+    position: relative;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.06), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .btn:hover {
+    border-color: var(--accent-a);
+    box-shadow: 0 0 24px var(--glow-a), inset 0 0 24px rgba(124,106,255,0.04);
+  }
+
+  .btn:hover::after { opacity: 1; }
+
+  .btn:active {
+    transform: scale(0.96);
+    box-shadow: none;
+  }
+
+  .btn.choice-a:hover { border-color: var(--accent-a); box-shadow: 0 0 28px var(--glow-a); }
+  .btn.choice-b:hover { border-color: var(--accent-b); box-shadow: 0 0 28px var(--glow-b); }
+
+  .btn.selected-a {
+    border-color: var(--accent-a);
+    background: rgba(124,106,255,0.12);
+    box-shadow: 0 0 28px var(--glow-a);
+    animation: pop 0.25s cubic-bezier(0.36, 1.5, 0.64, 1);
+  }
+
+  .btn.selected-b {
+    border-color: var(--accent-b);
+    background: rgba(255,106,154,0.12);
+    box-shadow: 0 0 28px var(--glow-b);
+    animation: pop 0.25s cubic-bezier(0.36, 1.5, 0.64, 1);
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    padding: 20px 48px;
+    width: auto;
+    min-width: 180px;
+    box-shadow: 0 4px 32px rgba(124,106,255,0.3);
+    letter-spacing: 0.03em;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(124,106,255,0.4);
+    border-color: transparent;
+  }
+
+  .btn-primary:active { transform: scale(0.97) translateY(0); }
+
+  .vs-divider {
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin: 4px 0;
+    opacity: 0.6;
+  }
+
+  /* ── RESULT SCREEN ── */
+  .result-emoji {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255,200,100,0.3));
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  .result-type {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent-a);
+    margin-bottom: 12px;
+  }
+
+  .result-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(24px, 7vw, 32px);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #fff 20%, #c0b8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-desc {
+    font-size: 15px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.65;
+    max-width: 320px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  .tag {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+  }
+
+  .retry-btn {
+    font-size: 14px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.2s, border-color 0.2s, transform 0.12s;
+    margin-top: 8px;
+  }
+
+  .retry-btn:hover { color: var(--text); border-color: var(--muted); transform: scale(1.03); }
+  .retry-btn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <p class="start-logo">This or That</p>
+    <div class="start-title">Pick one.</div>
+    <div class="start-or">No debate.</div>
+    <p class="start-subtitle">Let's play something quick 😭<br>No wrong answers. Probably.</p>
+    <button class="btn btn-primary" onclick="startQuiz()">Let's go →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">Question 1 / 6</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="question-text" id="question-text"></div>
+    <div class="choices">
+      <button class="btn choice-a" id="btn-a" onclick="choose(0)"></button>
+      <div class="vs-divider">OR</div>
+      <button class="btn choice-b" id="btn-b" onclick="choose(1)"></button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="result-emoji" id="result-emoji"></div>
+    <div class="result-type">Your vibe is</div>
+    <div class="result-title" id="result-title"></div>
+    <div class="result-desc" id="result-desc"></div>
+    <div class="result-tags" id="result-tags"></div>
+    <button class="btn btn-primary" onclick="startQuiz()" style="margin-bottom:12px">Play again</button>
+    <button class="retry-btn" onclick="goStart()">← Back to start</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  { q: "Pick your fuel ⚡", a: "Coffee ☕", b: "Tea 🍵" },
+  { q: "What's your default mode?", a: "Night 🌙", b: "Day ☀️" },
+  { q: "Background noise?", a: "Music 🎧", b: "Movie 🎬" },
+  { q: "Weekend plans:", a: "Chill at home 🏠", b: "Go out 🚗" },
+  { q: "How do you actually talk?", a: "Texting 💬", b: "Calling 📞" },
+  { q: "Your kind of chaos:", a: "Overthinking 🌀", b: "Winging it 🎲" }
+];
+
+const results = [
+  {
+    min: 0, max: 1,
+    emoji: "🏠", title: "Certified Homebody",
+    desc: "You function at peak capacity only when horizontal. Going outside is a threat. The ideal Saturday involves snacks, silence, and absolutely zero decisions.",
+    tags: ["lowkey", "comfy", "couch enthusiast", "hard to reach"]
+  },
+  {
+    min: 2, max: 2,
+    emoji: "🌙", title: "Night Owl Chaos Agent",
+    desc: "Most productive between midnight and 3am. Makes great decisions at 2pm, terrible ones at 2am. Somehow both relaxed AND unhinged. The 'seen' with no reply is your personality.",
+    tags: ["chaotic good", "chronically online", "mysterious", "caffeine-powered"]
+  },
+  {
+    min: 3, max: 3,
+    emoji: "🎧", title: "Vibe Curator",
+    desc: "You have a playlist for every situation including 'walking to the fridge.' Opinion on everything, shares them rarely. Lowkey the most fun person in the room but pretending you're not.",
+    tags: ["taste level: unmatched", "picky", "chill but has opinions", "playlist ready"]
+  },
+  {
+    min: 4, max: 4,
+    emoji: "🌀", title: "Chaotic Thinker",
+    desc: "Brain: 47 tabs open, all buffering. You're planning three things you'll never do and also forgetting something important. Somehow still pulling through. Iconic honestly.",
+    tags: ["overthinking specialist", "zero chill", "accidentally funny", "unpredictable"]
+  },
+  {
+    min: 5, max: 6,
+    emoji: "🎲", title: "Main Character (Unverified)",
+    desc: "Plans? Never heard of them. You'd show up to your own event late. Somehow things work out and you call it strategy. Extremely fun to be around. Do not lend you money.",
+    tags: ["unhinged", "improvising since birth", "somehow thriving", "go out energy"]
+  }
+];
+
+let current = 0;
+let score = 0;
+let answers = [];
+let transitioning = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active', 'exiting');
+    s.style.display = '';
+  });
+  const target = document.getElementById(id);
+  target.classList.add('active');
+}
+
+function transitionScreen(fromId, toId, fn) {
+  const from = document.getElementById(fromId);
+  from.classList.add('exiting');
+  setTimeout(() => {
+    from.classList.remove('active', 'exiting');
+    if (fn) fn();
+    showScreen(toId);
+  }, 240);
+}
+
+function goStart() {
+  transitionScreen('screen-result', 'screen-start', null);
+}
+
+function startQuiz() {
+  current = 0;
+  score = 0;
+  answers = [];
+  const from = document.querySelector('.screen.active').id;
+  transitionScreen(from, 'screen-quiz', loadQuestion);
+}
+
+function loadQuestion() {
+  const q = questions[current];
+  document.getElementById('question-text').textContent = q.q;
+  document.getElementById('btn-a').textContent = q.a;
+  document.getElementById('btn-b').textContent = q.b;
+  document.getElementById('btn-a').className = 'btn choice-a';
+  document.getElementById('btn-b').className = 'btn choice-b';
+  document.getElementById('btn-a').disabled = false;
+  document.getElementById('btn-b').disabled = false;
+  document.getElementById('progress-label').textContent = `Question ${current + 1} / ${questions.length}`;
+  document.getElementById('progress-fill').style.width = `${(current / questions.length) * 100}%`;
+  transitioning = false;
+}
+
+function choose(pick) {
+  if (transitioning) return;
+  transitioning = true;
+
+  const btnA = document.getElementById('btn-a');
+  const btnB = document.getElementById('btn-b');
+  btnA.disabled = true;
+  btnB.disabled = true;
+
+  if (pick === 0) {
+    btnA.classList.add('selected-a');
+    score += 0;
+  } else {
+    btnB.classList.add('selected-b');
+    score += 1;
+  }
+  answers.push(pick);
+
+  setTimeout(() => {
+    current++;
+    if (current < questions.length) {
+      // Slide out / in within quiz screen
+      const quiz = document.getElementById('screen-quiz');
+      quiz.style.animation = 'none';
+      quiz.offsetHeight; // reflow
+      quiz.style.animation = '';
+      quiz.classList.add('exiting');
+      setTimeout(() => {
+        quiz.classList.remove('exiting');
+        loadQuestion();
+        quiz.style.animation = 'fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) forwards';
+      }, 230);
+    } else {
+      showResult();
+    }
+  }, 420);
+}
+
+function showResult() {
+  const pct = (score / questions.length) * 6;
+  const result = results.find(r => pct >= r.min && pct <= r.max) || results[2];
+
+  document.getElementById('result-emoji').textContent = result.emoji;
+  document.getElementById('result-title').textContent = result.title;
+  document.getElementById('result-desc').textContent = result.desc;
+
+  const tagsEl = document.getElementById('result-tags');
+  tagsEl.innerHTML = result.tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+  document.getElementById('progress-fill').style.width = '100%';
+
+  transitionScreen('screen-quiz', 'screen-result', null);
+}
+</script>
+</body>
+</html>
